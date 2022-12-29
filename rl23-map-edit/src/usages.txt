@@ -1,0 +1,3 @@
+usage examples:
+  rl23-map-edit --edit path_to_map.ron (opens existing file)
+  rl23-map-edit --create path_to_map.ron 64 48 (creates new file with width 64 and height 48)
