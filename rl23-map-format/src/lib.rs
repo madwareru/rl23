@@ -281,7 +281,18 @@ pub struct WangEncoding {
 #[derive(Copy, Clone, Debug, PartialEq, Deserialize, Serialize)]
 pub enum MapEntity {
     Door,
+    ClosedDoor(ClosedDoor),
     Unit(Unit)
+}
+
+impl MapEntity {
+    pub fn get_coords(self) -> [usize; 2] {
+        match self {
+            MapEntity::Door => [64, 352],
+            MapEntity::ClosedDoor(closed_door) => closed_door.get_coords(),
+            MapEntity::Unit(unit) => unit.get_coords()
+        }
+    }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Deserialize, Serialize)]
@@ -301,4 +312,45 @@ pub enum Unit {
     Skeleton1,
     Skeleton2,
     Necromancer
+}
+
+impl Unit {
+    pub fn get_coords(self) -> [usize; 2] {
+        match self {
+            Unit::Fighter => [0, 0],
+            Unit::Archer => [32, 0],
+            Unit::WhiteMage => [32, 32],
+            Unit::RedMage => [0, 32],
+            Unit::OrcSword => [64, 0],
+            Unit::OrcAxe => [96, 0],
+            Unit::GoblinFighter => [64, 32],
+            Unit::GoblinArcher => [96, 32],
+            Unit::Squirrel => [64, 64],
+            Unit::Spider => [0, 128],
+            Unit::Bat => [0, 96],
+            Unit::Ghost => [32, 128],
+            Unit::Skeleton1 => [32, 64],
+            Unit::Skeleton2 => [32, 96],
+            Unit::Necromancer => [0, 64]
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Deserialize, Serialize)]
+pub enum ClosedDoor {
+    Gray,
+    Green,
+    Brown,
+    Blue
+}
+
+impl ClosedDoor {
+    pub fn get_coords(self) -> [usize; 2] {
+        match self {
+            ClosedDoor::Gray => [0, 288],
+            ClosedDoor::Green => [0, 320],
+            ClosedDoor::Brown => [64, 320],
+            ClosedDoor::Blue => [0, 352]
+        }
+    }
 }

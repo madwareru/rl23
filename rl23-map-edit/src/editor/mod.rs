@@ -1,12 +1,12 @@
 use std::path::PathBuf;
-use egui::{Align2, Context, Ui};
+use egui::{Context};
 use retro_blit::{
     rendering::blittable::BlitBuilder,
     rendering::BlittableSurface,
     window::{KeyCode, RetroBlitContext, WindowMode}
 };
 use retro_blit::rendering::shapes::fill_rectangle;
-use rl23_map_format::{MapEntity, TerrainKind, TilingInfo, Unit, WallKind, WangEncoding};
+use rl23_map_format::{MapEntity, TerrainKind, TilingInfo, WallKind, WangEncoding};
 use crate::editor::tool::EditorTool;
 
 const SCROLL_SPEED: f32 = 512.0;
@@ -233,26 +233,7 @@ impl EditorApp {
             for (&idx, map_entity) in self.map_info.entity_layer.iter() {
                 let coord_x = idx % self.map_info.width;
                 let coord_y = idx / self.map_info.height;
-                let (source_x, source_y) = match map_entity {
-                    MapEntity::Door => (64, 352),
-                    MapEntity::Unit(unit) => match unit {
-                        Unit::Fighter => (0, 0),
-                        Unit::Archer => (32,0),
-                        Unit::WhiteMage => (32, 32),
-                        Unit::RedMage => (0, 32),
-                        Unit::OrcSword => (64, 0),
-                        Unit::OrcAxe => (96, 0),
-                        Unit::GoblinFighter => (64, 32),
-                        Unit::GoblinArcher => (96, 32),
-                        Unit::Squirrel => (64, 64),
-                        Unit::Spider => (0, 128),
-                        Unit::Bat => (0, 96),
-                        Unit::Ghost => (32, 128),
-                        Unit::Skeleton1 => (64, 32),
-                        Unit::Skeleton2 => (96, 32),
-                        Unit::Necromancer => (64, 0)
-                    }
-                };
+                let [source_x, source_y] = map_entity.get_coords();
 
                 BlitBuilder::create(ctx, &self.sprite_sheet.with_color_key(0))
                     .with_source_subrect(source_x, source_y, 32, 32)
@@ -294,13 +275,6 @@ impl retro_blit::window::ContextHandler for EditorApp {
         WindowMode::Mode960x600
     }
 
-    fn init(&mut self, ctx: &mut RetroBlitContext) {
-        for i in 0..self.palette.len() {
-            let [r, g, b] = self.palette[i];
-            ctx.set_palette(i as _, [r, g, b]);
-        }
-    }
-
     fn on_mouse_down(&mut self, ctx: &mut RetroBlitContext, button_number: u8) {
         if ctx.is_egui_area_under_pointer() {
             return;
@@ -310,12 +284,16 @@ impl retro_blit::window::ContextHandler for EditorApp {
         }
     }
 
-    fn on_mouse_up(&mut self, ctx: &mut RetroBlitContext, button_number: u8) {
-        if ctx.is_egui_area_under_pointer() {
-            return;
-        }
+    fn on_mouse_up(&mut self, _ctx: &mut RetroBlitContext, button_number: u8) {
         if button_number == 0 {
             self.mouse_pressed = false;
+        }
+    }
+
+    fn init(&mut self, ctx: &mut RetroBlitContext) {
+        for i in 0..self.palette.len() {
+            let [r, g, b] = self.palette[i];
+            ctx.set_palette(i as _, [r, g, b]);
         }
     }
 
@@ -326,121 +304,6 @@ impl retro_blit::window::ContextHandler for EditorApp {
     }
 
     fn egui(&mut self, ctx: &mut RetroBlitContext, egui_ctx: Context) {
-        egui::Window::new("general")
-            .default_width(130.0)
-            .resizable(false)
-            .anchor(Align2::LEFT_TOP, [0.0, 0.0])
-            .show(&egui_ctx, |ui: &mut Ui| {
-                ui.radio_value(&mut self.current_tool, EditorTool::EditTerrain, "Terrain");
-                ui.radio_value(&mut self.current_tool, EditorTool::EditEntities, "Entities");
-                ui.radio_value(&mut self.current_tool, EditorTool::EditWalls, "Walls");
-
-                ui.separator();
-                if ui.button("Save").clicked() {
-                    self.map_info.save_to_path(&self.file_path);
-                }
-
-                ui.separator();
-                if ui.button("Quit").clicked() {
-                    ctx.quit();
-                }
-            });
-
-        egui::Window::new("tool")
-            .default_width(130.0)
-            .resizable(false)
-            .anchor(Align2::RIGHT_TOP, [0.0, 0.0])
-            .show(&egui_ctx, |ui: &mut Ui| {
-                match self.current_tool {
-                    EditorTool::EditTerrain => {
-                        if ui.add(egui::RadioButton::new(
-                            match self.current_terrain_kind {
-                                TerrainKind::Mud { .. } => true,
-                                _ => false
-                            },
-                            "Mud"
-                        )).clicked() {
-                            match self.current_terrain_kind {
-                                TerrainKind::Mud { .. } => { },
-                                _ => {
-                                    self.current_terrain_kind = TerrainKind::Mud { offset: 0 }
-                                }
-                            }
-                        }
-                        ui.radio_value(&mut self.current_terrain_kind, TerrainKind::Sand, "Sand");
-                        ui.radio_value(&mut self.current_terrain_kind, TerrainKind::Dirt, "Dirt");
-                        ui.radio_value(&mut self.current_terrain_kind, TerrainKind::Grass, "Grass");
-                        ui.radio_value(&mut self.current_terrain_kind, TerrainKind::Water, "Water");
-                        ui.radio_value(&mut self.current_terrain_kind, TerrainKind::CaveWater, "CaveWater");
-                        ui.radio_value(&mut self.current_terrain_kind, TerrainKind::Lava, "Lava");
-                        ui.radio_value(&mut self.current_terrain_kind, TerrainKind::Tile, "Tile");
-                        ui.radio_value(&mut self.current_terrain_kind, TerrainKind::BrightTile, "BrightTile");
-                        ui.radio_value(&mut self.current_terrain_kind, TerrainKind::MossTile, "MossTile");
-                        ui.radio_value(&mut self.current_terrain_kind, TerrainKind::VibrantTile, "VibrantTile");
-                    }
-                    EditorTool::EditWalls => {
-                        ui.radio_value(&mut self.current_wall_kind, None, "None");
-                        ui.radio_value(&mut self.current_wall_kind, Some(WallKind::Dirt), "Dirt");
-                        ui.radio_value(&mut self.current_wall_kind, Some(WallKind::Bricks), "Bricks");
-                    }
-                    EditorTool::EditEntities => {
-                        ui.radio_value(&mut self.current_entity_kind, None, "None");
-                        ui.radio_value(&mut self.current_entity_kind, Some(MapEntity::Door), "Door");
-                        if ui.add(egui::RadioButton::new(
-                            match self.current_entity_kind {
-                                Some(MapEntity::Unit(_)) => true,
-                                _ => false
-                            },
-                            "Unit"
-                        )).clicked() {
-                            match self.current_entity_kind {
-                                Some(MapEntity::Unit(_)) => { },
-                                _ => {
-                                    self.current_entity_kind = Some(MapEntity::Unit(Unit::Fighter))
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-
-        match self.current_entity_kind {
-            Some(MapEntity::Unit(unit)) => {
-                egui::Window::new("unit")
-                    .default_width(130.0)
-                    .resizable(false)
-                    .anchor(Align2::CENTER_BOTTOM, [0.0, 0.0])
-                    .show(&egui_ctx, |ui: &mut Ui| {
-                        let mut unit = unit;
-                        ui.vertical(|ui: &mut Ui| {
-                            ui.horizontal(|ui: &mut Ui| {
-                                ui.radio_value(&mut unit, Unit::Fighter, "Fighter");
-                                ui.radio_value(&mut unit, Unit::Archer, "Archer");
-                                ui.radio_value(&mut unit, Unit::WhiteMage, "WhiteMage");
-                                ui.radio_value(&mut unit, Unit::RedMage, "RedMage");
-                            });
-                            ui.horizontal(|ui: &mut Ui| {
-                                ui.radio_value(&mut unit, Unit::OrcSword, "OrcSword");
-                                ui.radio_value(&mut unit, Unit::OrcAxe, "OrcAxe");
-                                ui.radio_value(&mut unit, Unit::GoblinFighter, "GoblinFighter");
-                                ui.radio_value(&mut unit, Unit::GoblinArcher, "GoblinArcher");
-                            });
-                            ui.horizontal(|ui: &mut Ui| {
-                                ui.radio_value(&mut unit, Unit::Necromancer, "Necromancer");
-                                ui.radio_value(&mut unit, Unit::Skeleton1, "Skeleton1");
-                                ui.radio_value(&mut unit, Unit::Skeleton2, "Skeleton2");
-                                ui.radio_value(&mut unit, Unit::Spider, "Spider");
-                            });
-                            ui.horizontal(|ui: &mut Ui| {
-                                ui.radio_value(&mut unit, Unit::Bat, "Bat");
-                                ui.radio_value(&mut unit, Unit::Ghost, "Ghost");
-                                ui.radio_value(&mut unit, Unit::Squirrel, "Squirrel");
-                            });
-                        });
-                        self.current_entity_kind = Some(MapEntity::Unit(unit));
-                    });
-            },
-            _ => {}
-        }
+        self.tools_ui(ctx, &egui_ctx)
     }
 }
