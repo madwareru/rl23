@@ -6,7 +6,7 @@ use retro_blit::{
     window::{KeyCode, RetroBlitContext, WindowMode}
 };
 use retro_blit::rendering::shapes::fill_rectangle;
-use rl23_map_format::{MapEntity, TerrainKind, TilingInfo, WallKind, WangEncoding};
+use rl23_map_format::{GatherableItem, MapEntity, TerrainKind, TilingInfo, WallKind, WangEncoding};
 use crate::editor::tool::EditorTool;
 
 const SCROLL_SPEED: f32 = 512.0;
@@ -21,6 +21,7 @@ struct EditorApp {
     map_info: rl23_map_format::MapInfo,
     current_terrain_kind: TerrainKind,
     current_wall_kind: Option<WallKind>,
+    current_gatherable_kind: Option<GatherableItem>,
     current_entity_kind: Option<MapEntity>,
     current_tool: EditorTool,
     mouse_pressed: bool,
@@ -45,6 +46,7 @@ impl EditorApp {
             current_tool: EditorTool::EditTerrain,
             current_terrain_kind: TerrainKind::Mud { offset: 0},
             current_wall_kind: Some(WallKind::Dirt),
+            current_gatherable_kind: None,
             current_entity_kind: None,
             mouse_pressed: false,
             camera_x: 0.0,
@@ -176,6 +178,22 @@ impl EditorApp {
                         }
                     }
                 }
+            }
+        }
+
+        // Render gatherables
+        {
+            for (&idx, gatherable) in self.map_info.gatherable_layer.iter() {
+                let coord_x = idx % self.map_info.width;
+                let coord_y = idx / self.map_info.height;
+                let [source_x, source_y] = gatherable.get_coords();
+
+                BlitBuilder::create(ctx, &self.sprite_sheet.with_color_key(0))
+                    .with_source_subrect(source_x, source_y, 32, 32)
+                    .with_dest_pos(
+                        (coord_x as i32 * 32 - camera_x) as _,
+                        (coord_y as i32 * 32 - camera_y) as _
+                    ).blit();
             }
         }
 

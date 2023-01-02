@@ -20,6 +20,8 @@ pub struct MapInfo {
     pub height: usize,
     pub terrain_layer: Vec<TerrainKind>,
     #[serde(default)]
+    pub gatherable_layer: HashMap<usize, GatherableItem>,
+    #[serde(default)]
     pub entity_layer: HashMap<usize, MapEntity>,
     pub wall_layer: Vec<Option<WallKind>>,
 }
@@ -36,6 +38,7 @@ impl MapInfo {
             width,
             height,
             terrain_layer,
+            gatherable_layer: Default::default(),
             entity_layer: Default::default(),
             wall_layer
         }
@@ -282,7 +285,9 @@ pub struct WangEncoding {
 pub enum MapEntity {
     Door,
     ClosedDoor(ClosedDoor),
-    Unit(Unit)
+    Unit(Unit),
+    Loot,
+    Logic
 }
 
 impl MapEntity {
@@ -290,7 +295,9 @@ impl MapEntity {
         match self {
             MapEntity::Door => [64, 352],
             MapEntity::ClosedDoor(closed_door) => closed_door.get_coords(),
-            MapEntity::Unit(unit) => unit.get_coords()
+            MapEntity::Unit(unit) => unit.get_coords(),
+            MapEntity::Loot => [512, 64],
+            MapEntity::Logic => [544, 64]
         }
     }
 }
@@ -351,6 +358,25 @@ impl ClosedDoor {
             ClosedDoor::Green => [0, 320],
             ClosedDoor::Brown => [64, 320],
             ClosedDoor::Blue => [0, 352]
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Deserialize, Serialize)]
+pub enum GatherableItem {
+    Mushroom(usize),
+}
+
+impl GatherableItem {
+    pub fn get_coords(self) -> [usize; 2] {
+        match self {
+            GatherableItem::Mushroom(num) => {
+                let num = num % 10;
+                [
+                    512 + 32 * (num % 5),
+                    32 * (num / 5)
+                ]
+            }
         }
     }
 }
