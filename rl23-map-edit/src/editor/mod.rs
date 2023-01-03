@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use egui::{Context};
+use egui::{Context, FontData, FontDefinitions, FontFamily};
 use retro_blit::{
     rendering::blittable::BlitBuilder,
     rendering::BlittableSurface,
@@ -11,6 +11,7 @@ use crate::editor::tool::EditorTool;
 
 const SCROLL_SPEED: f32 = 512.0;
 const TILES_BYTES: &[u8] = include_bytes!("../../../assets/tiles.im256");
+const JETBRAINS_MONO_FONT: &[u8] = include_bytes!("../../../assets/JetBrainsMono-Medium.ttf");
 
 mod tool;
 
@@ -23,6 +24,7 @@ struct EditorApp {
     current_wall_kind: Option<WallKind>,
     current_gatherable_kind: Option<GatherableItem>,
     current_entity_kind: Option<MapEntity>,
+    current_edited_entity: Option<usize>,
     current_tool: EditorTool,
     mouse_pressed: bool,
     camera_x: f32,
@@ -43,14 +45,15 @@ impl EditorApp {
             sprite_sheet,
             file_path,
             map_info,
-            current_tool: EditorTool::EditTerrain,
+            current_tool: EditorTool::Terrain,
             current_terrain_kind: TerrainKind::Mud { offset: 0},
             current_wall_kind: Some(WallKind::Dirt),
             current_gatherable_kind: None,
             current_entity_kind: None,
             mouse_pressed: false,
             camera_x: 0.0,
-            camera_y: 0.0
+            camera_y: 0.0,
+            current_edited_entity: None
         }
     }
 
@@ -82,6 +85,17 @@ impl EditorApp {
 
         if self.mouse_pressed {
             self.put(coord_x, coord_y);
+        }
+    }
+
+    fn get_edited_entity_coords(&mut self) -> Option<(i32, i32)> {
+        if let EditorTool::EditEntities = self.current_tool {
+            let idx = self.current_edited_entity?;
+            let x = idx % self.map_info.width;
+            let y = idx / self.map_info.width;
+            Some((x as i32, y as i32))
+        } else {
+            None
         }
     }
 
@@ -262,6 +276,26 @@ impl EditorApp {
             }
         }
 
+        // Draw selections
+        {
+            if let Some((entity_x, entity_y)) = self.get_edited_entity_coords() {
+                BlitBuilder::create(ctx, &self.sprite_sheet.with_color_key(0))
+                    .with_source_subrect(512, 320, 32, 32)
+                    .with_dest_pos((entity_x * 32 - camera_x) as _, (entity_y * 32 - camera_y) as _)
+                    .blit();
+            }
+
+            let (coord_x, coord_y) = self.get_selection_coords(ctx);
+
+            if (0..self.map_info.width as i32).contains(&coord_x) &&
+                (0..self.map_info.height as i32).contains(&coord_y) {
+                BlitBuilder::create(ctx, &self.sprite_sheet.with_color_key(0))
+                    .with_source_subrect(512, 288, 32, 32)
+                    .with_dest_pos((coord_x * 32 - camera_x) as _, (coord_y * 32 - camera_y) as _)
+                    .blit();
+            }
+        }
+
         let min_x = (-camera_x) as i16;
         let min_y = (-camera_y) as i16;
         let max_x = (self.map_info.width as i32 * 32 - camera_x) as i16;
@@ -271,16 +305,6 @@ impl EditorApp {
         fill_rectangle(ctx, min_x - 16, max_y, (self.map_info.width * 32 + 32) as u16, 16, 0);
         fill_rectangle(ctx, min_x - 16, min_y, 16, self.map_info.height as u16 * 32, 0);
         fill_rectangle(ctx, max_x, min_y, 16, self.map_info.height as u16 * 32, 0);
-
-        let (coord_x, coord_y) = self.get_selection_coords(ctx);
-
-        if (0..self.map_info.width as i32).contains(&coord_x) &&
-            (0..self.map_info.height as i32).contains(&coord_y) {
-            BlitBuilder::create(ctx, &self.sprite_sheet.with_color_key(0))
-                .with_source_subrect(0, 416, 32, 32)
-                .with_dest_pos((coord_x * 32 - camera_x) as _, (coord_y * 32 - camera_y) as _)
-                .blit();
-        }
     }
 }
 
@@ -313,6 +337,20 @@ impl retro_blit::window::ContextHandler for EditorApp {
             let [r, g, b] = self.palette[i];
             ctx.set_palette(i as _, [r, g, b]);
         }
+
+        let mut fonts = FontDefinitions::default();
+
+        fonts.font_data
+            .insert("JetBrains Mono".to_owned(), FontData::from_static(JETBRAINS_MONO_FONT));
+        fonts.families
+            .get_mut(&FontFamily::Proportional)
+            .unwrap()
+            .insert(0, "JetBrains Mono".to_owned());
+        fonts.families
+            .get_mut(&FontFamily::Monospace)
+            .unwrap()
+            .insert(0, "JetBrains Mono".to_owned());
+        ctx.get_egui_ctx().set_fonts(fonts);
     }
 
     fn update(&mut self, ctx: &mut RetroBlitContext, dt: f32) {

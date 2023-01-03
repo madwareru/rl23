@@ -1373,6 +1373,7 @@ dependencies = [
 name = "rl23-map-format"
 version = "0.1.0"
 dependencies = [
+ "egui",
  "rand",
  "ron",
  "serde",

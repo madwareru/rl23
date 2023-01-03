@@ -4,6 +4,7 @@ use std::{
     path::PathBuf
 };
 use std::collections::HashMap;
+use egui::{Ui};
 use rand::Rng;
 use ron::{
     de::from_reader,
@@ -23,6 +24,8 @@ pub struct MapInfo {
     pub gatherable_layer: HashMap<usize, GatherableItem>,
     #[serde(default)]
     pub entity_layer: HashMap<usize, MapEntity>,
+    #[serde(default)]
+    pub entity_data_layer: HashMap<usize, Vec<EntityComponentData>>,
     pub wall_layer: Vec<Option<WallKind>>,
 }
 impl MapInfo {
@@ -40,6 +43,7 @@ impl MapInfo {
             terrain_layer,
             gatherable_layer: Default::default(),
             entity_layer: Default::default(),
+            entity_data_layer: Default::default(),
             wall_layer
         }
     }
@@ -293,11 +297,11 @@ pub enum MapEntity {
 impl MapEntity {
     pub fn get_coords(self) -> [usize; 2] {
         match self {
-            MapEntity::Door => [64, 352],
+            MapEntity::Door => [64, 480],
             MapEntity::ClosedDoor(closed_door) => closed_door.get_coords(),
             MapEntity::Unit(unit) => unit.get_coords(),
             MapEntity::Loot => [512, 64],
-            MapEntity::Logic => [544, 64]
+            MapEntity::Logic => [512, 256]
         }
     }
 }
@@ -354,10 +358,10 @@ pub enum ClosedDoor {
 impl ClosedDoor {
     pub fn get_coords(self) -> [usize; 2] {
         match self {
-            ClosedDoor::Gray => [0, 288],
-            ClosedDoor::Green => [0, 320],
-            ClosedDoor::Brown => [64, 320],
-            ClosedDoor::Blue => [0, 352]
+            ClosedDoor::Gray => [0, 416],
+            ClosedDoor::Green => [0, 448],
+            ClosedDoor::Brown => [64, 448],
+            ClosedDoor::Blue => [0, 480]
         }
     }
 }
@@ -379,4 +383,71 @@ impl GatherableItem {
             }
         }
     }
+}
+
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
+pub enum EntityComponentData {
+    SpawnRandomUnit(SpawnRandomUnit)
+}
+
+impl EntityComponentData {
+    pub fn draw_context_menu(map_entity: MapEntity, ui: &mut egui::Ui) -> Option<Self> {
+        let mut result = None;
+        ui.menu_button("+", |ui: &mut egui::Ui| {
+            macro_rules! menu_entry(
+                ($type_name:ident as $name: literal) => {
+                    if $type_name::is_applicable_for_enitity_type(map_entity) {
+                        if ui.button($name).clicked() {
+                            result = Some(Self::$type_name(Default::default()));
+                        }
+                    }
+                }
+            );
+            menu_entry!(SpawnRandomUnit as "Spawn Random Unit");
+        });
+        result
+    }
+
+    pub fn draw_egui(&mut self, ui: &mut egui::Ui) -> bool {
+        let mut delete = false;
+        ui.group(|ui: &mut Ui| {
+            match self {
+                EntityComponentData::SpawnRandomUnit(spawn_random_unit) => spawn_random_unit.draw_egui(ui)
+            }
+            if ui.button("DELETE").clicked() {
+                delete = true;
+            }
+        });
+        !delete
+    }
+}
+
+pub trait EntityComponentDataImpl: Clone + Default {
+    fn is_applicable_for_enitity_type(map_entity: MapEntity) -> bool;
+    fn draw_egui(&mut self, ui: &mut egui::Ui);
+}
+
+#[derive(Default, Copy, Clone, PartialEq, Debug, Deserialize, Serialize)]
+pub struct SpawnRandomUnit {
+    pub min_level: i32,
+    pub max_level: i32
+}
+
+impl EntityComponentDataImpl for SpawnRandomUnit {
+    fn draw_egui(&mut self, ui: &mut Ui) {
+            ui.label(padded_str("Spawn Random Unit"));
+            ui.add(egui::DragValue::new(&mut self.min_level).prefix("min_level: ").speed(1.0));
+            ui.add(egui::DragValue::new(&mut self.max_level).prefix("max_level: ").speed(1.0));
+    }
+
+    fn is_applicable_for_enitity_type(map_entity: MapEntity) -> bool {
+        match map_entity {
+            MapEntity::Logic => true,
+            _ => false
+        }
+    }
+}
+
+fn padded_str(s: &str) -> String {
+    format!("{:<34}", s)
 }

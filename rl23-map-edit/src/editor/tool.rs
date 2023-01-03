@@ -1,15 +1,16 @@
 use egui::{Align2, Context, Ui};
 use rand::Rng;
 use retro_blit::window::RetroBlitContext;
-use rl23_map_format::{ClosedDoor, GatherableItem, MapEntity, TerrainKind, Unit, WallKind};
+use rl23_map_format::{ClosedDoor, EntityComponentData, GatherableItem, MapEntity, TerrainKind, Unit, WallKind};
 use crate::editor::EditorApp;
 
 #[derive(Copy, Clone, PartialEq)]
 pub enum EditorTool {
-    EditTerrain,
-    EditGatherables,
+    Terrain,
+    Gatherables,
+    Entities,
     EditEntities,
-    EditWalls
+    Walls
 }
 
 impl EditorApp {
@@ -31,7 +32,7 @@ impl EditorApp {
         let idx = y * self.map_info.width + x;
 
         match self.current_tool {
-            EditorTool::EditTerrain => {
+            EditorTool::Terrain => {
                 self.map_info.terrain_layer[idx] = self.current_terrain_kind;
                 match self.current_terrain_kind {
                     TerrainKind::Mud { .. } => {
@@ -43,32 +44,43 @@ impl EditorApp {
                     _ => {}
                 }
             }
-            EditorTool::EditEntities => {
+            EditorTool::Entities => {
                 match self.map_info.entity_layer.get(&idx) {
                     None => {
                         match self.current_entity_kind {
                             None => {}
                             Some(map_entity) => {
                                 self.map_info.entity_layer.insert(idx, map_entity);
+                                self.map_info.entity_data_layer.insert(idx, vec![]);
                             }
                         }
                     }
-                    Some(&_) => {
+                    Some(&old_entity) => {
                         match self.current_entity_kind {
                             None => {
                                 self.map_info.entity_layer.remove(&idx);
+                                self.map_info.entity_data_layer.remove(&idx);
+                                match self.current_edited_entity {
+                                    Some(id) if id == idx => {
+                                        self.current_edited_entity = None;
+                                    },
+                                    _ => {}
+                                }
                             }
                             Some(map_entity) => {
-                                self.map_info.entity_layer.insert(idx, map_entity);
+                                if old_entity != map_entity {
+                                    self.map_info.entity_layer.insert(idx, map_entity);
+                                    self.map_info.entity_data_layer.insert(idx, vec![]);
+                                }
                             }
                         }
                     }
                 }
             }
-            EditorTool::EditWalls => {
+            EditorTool::Walls => {
                 self.map_info.wall_layer[idx] = self.current_wall_kind;
             }
-            EditorTool::EditGatherables => {
+            EditorTool::Gatherables => {
                 match self.map_info.gatherable_layer.get(&idx) {
                     None => {
                         match self.current_gatherable_kind {
@@ -90,6 +102,13 @@ impl EditorApp {
                     }
                 }
             }
+            EditorTool::EditEntities => {
+                self.current_edited_entity = if self.map_info.entity_layer.contains_key(&idx) {
+                    Some(idx)
+                } else {
+                    None
+                };
+            }
         }
     }
     pub fn tools_ui(&mut self, ctx: &mut RetroBlitContext, egui_ctx: &Context) {
@@ -98,10 +117,11 @@ impl EditorApp {
             .resizable(false)
             .anchor(Align2::LEFT_TOP, [0.0, 0.0])
             .show(&egui_ctx, |ui: &mut Ui| {
-                ui.radio_value(&mut self.current_tool, EditorTool::EditTerrain, "Terrain");
-                ui.radio_value(&mut self.current_tool, EditorTool::EditGatherables, "Gatherables");
-                ui.radio_value(&mut self.current_tool, EditorTool::EditEntities, "Entities");
-                ui.radio_value(&mut self.current_tool, EditorTool::EditWalls, "Walls");
+                ui.radio_value(&mut self.current_tool, EditorTool::Terrain, "Terrain");
+                ui.radio_value(&mut self.current_tool, EditorTool::Gatherables, "Gatherables");
+                ui.radio_value(&mut self.current_tool, EditorTool::Entities, "Entities");
+                ui.radio_value(&mut self.current_tool, EditorTool::EditEntities, "Edit Entities");
+                ui.radio_value(&mut self.current_tool, EditorTool::Walls, "Walls");
 
                 ui.separator();
                 if ui.button("Save").clicked() {
@@ -114,13 +134,20 @@ impl EditorApp {
                 }
             });
 
-        egui::Window::new("tool")
-            .default_width(130.0)
+        let tool_title = match self.current_tool {
+            EditorTool::Terrain => "Brush                  ",
+            EditorTool::Gatherables => "Brush                  ",
+            EditorTool::Entities => "Brush                  ",
+            EditorTool::EditEntities => "Inspector            ",
+            EditorTool::Walls => "Brush                  "
+        };
+
+        egui::Window::new(tool_title)
             .resizable(false)
             .anchor(Align2::RIGHT_TOP, [0.0, 0.0])
             .show(&egui_ctx, |ui: &mut Ui| {
                 match self.current_tool {
-                    EditorTool::EditTerrain => {
+                    EditorTool::Terrain => {
                         if ui.add(egui::RadioButton::new(
                             match self.current_terrain_kind {
                                 TerrainKind::Mud { .. } => true,
@@ -146,12 +173,12 @@ impl EditorApp {
                         ui.radio_value(&mut self.current_terrain_kind, TerrainKind::MossTile, "MossTile");
                         ui.radio_value(&mut self.current_terrain_kind, TerrainKind::VibrantTile, "VibrantTile");
                     }
-                    EditorTool::EditWalls => {
+                    EditorTool::Walls => {
                         ui.radio_value(&mut self.current_wall_kind, None, "None");
                         ui.radio_value(&mut self.current_wall_kind, Some(WallKind::Dirt), "Dirt");
                         ui.radio_value(&mut self.current_wall_kind, Some(WallKind::Bricks), "Bricks");
                     }
-                    EditorTool::EditEntities => {
+                    EditorTool::Entities => {
                         ui.radio_value(&mut self.current_entity_kind, None, "None");
                         ui.radio_value(&mut self.current_entity_kind, Some(MapEntity::Door), "Door");
 
@@ -245,7 +272,7 @@ impl EditorApp {
                             _ => {}
                         }
                     }
-                    EditorTool::EditGatherables => {
+                    EditorTool::Gatherables => {
                         ui.radio_value(&mut self.current_gatherable_kind, None, "None");
 
                         if ui.add(egui::RadioButton::new(
@@ -293,6 +320,32 @@ impl EditorApp {
                                     });
                             }
                             None => {}
+                        }
+                    }
+                    EditorTool::EditEntities => {
+                        if let Some(idx) = self.current_edited_entity {
+                            egui::ScrollArea::vertical().auto_shrink([false, true]).show(ui, |ui: &mut Ui| {
+                                let map_entity = self.map_info.entity_layer[&idx];
+                                if !self.map_info.entity_data_layer.contains_key(&idx) {
+                                    self.map_info.entity_data_layer.insert(idx, vec![]);
+                                }
+                                match self.map_info.entity_data_layer.get_mut(&idx) {
+                                    Some(entries) => {
+                                        let mut offset = 0;
+                                        while offset < entries.len() {
+                                            if entries[offset].draw_egui(ui) {
+                                                offset += 1;
+                                            } else {
+                                                entries.remove(offset);
+                                            }
+                                        }
+                                        if let Some(new_entry) = EntityComponentData::draw_context_menu(map_entity, ui) {
+                                            entries.push(new_entry);
+                                        }
+                                    },
+                                    None => unreachable!()
+                                }
+                            });
                         }
                     }
                 }
