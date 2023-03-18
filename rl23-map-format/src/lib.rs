@@ -64,7 +64,8 @@ impl MapInfo {
 #[derive(Copy, Clone, Debug, PartialEq, Deserialize, Serialize)]
 pub enum WallKind {
     Dirt,
-    Bricks
+    Bricks,
+    Wood
 }
 impl WallKind {
     pub fn get_tiling_info(self) -> TilingInfo {
@@ -76,6 +77,10 @@ impl WallKind {
             WallKind::Bricks => TilingInfo::Wang(WangTerrain{
                 x_offset: 12 * 32,
                 y_offset: 4 * 32
+            }),
+            WallKind::Wood => TilingInfo::Wang(WangTerrain{
+                x_offset: 20 * 32,
+                y_offset: 12 * 32
             }),
         }
     }
@@ -369,6 +374,7 @@ impl ClosedDoor {
 #[derive(Copy, Clone, Debug, PartialEq, Deserialize, Serialize)]
 pub enum GatherableItem {
     Mushroom(usize),
+    Wheat
 }
 
 impl GatherableItem {
@@ -381,6 +387,10 @@ impl GatherableItem {
                     32 * (num / 5)
                 ]
             }
+            GatherableItem::Wheat => [
+                544,
+                64
+            ]
         }
     }
 }
@@ -449,5 +459,5 @@ impl EntityComponentDataImpl for SpawnRandomUnit {
 }
 
 fn padded_str(s: &str) -> String {
-    format!("{:<34}", s)
+    format!("{:<35}", s)
 }

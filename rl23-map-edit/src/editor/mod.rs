@@ -68,6 +68,7 @@ impl EditorApp {
         if ctx.is_key_pressed(KeyCode::Right) {
             self.camera_x += dt * SCROLL_SPEED;
         }
+
         if ctx.is_key_pressed(KeyCode::Up) {
             self.camera_y -= dt * SCROLL_SPEED;
         }
@@ -81,10 +82,10 @@ impl EditorApp {
             return;
         }
 
-        let (coord_x, coord_y) = self.get_selection_coords(ctx);
-
-        if self.mouse_pressed {
-            self.put(coord_x, coord_y);
+        if let Some((coord_x, coord_y)) = self.get_selection_coords(ctx) {
+            if self.mouse_pressed {
+                self.put(coord_x, coord_y);
+            }
         }
     }
 
@@ -99,9 +100,15 @@ impl EditorApp {
         }
     }
 
-    fn get_selection_coords(&mut self, ctx: &mut RetroBlitContext) -> (i32, i32) {
+    fn get_selection_coords(&mut self, ctx: &mut RetroBlitContext) -> Option<(i32, i32)> {
         let (mouse_x, mouse_y) = ctx.get_mouse_pos();
-        ((mouse_x + self.camera_x) as i32 / 32, (mouse_y + self.camera_y) as i32 / 32)
+        let rx = mouse_x + self.camera_x;
+        let ry = mouse_y + self.camera_y;
+        if rx >= 0.0 && ry >= 0.0 {
+            Some((rx as i32 / 32, ry as i32 / 32))
+        } else {
+            None
+        }
     }
 
     fn render_map(&mut self, ctx: &mut RetroBlitContext) {
@@ -223,7 +230,8 @@ impl EditorApp {
 
                     for kind in [
                         WallKind::Dirt,
-                        WallKind::Bricks
+                        WallKind::Bricks,
+                        WallKind::Wood
                     ] {
                         let mut encoding = WangEncoding {
                             north_east: false,
@@ -285,14 +293,14 @@ impl EditorApp {
                     .blit();
             }
 
-            let (coord_x, coord_y) = self.get_selection_coords(ctx);
-
-            if (0..self.map_info.width as i32).contains(&coord_x) &&
-                (0..self.map_info.height as i32).contains(&coord_y) {
-                BlitBuilder::create(ctx, &self.sprite_sheet.with_color_key(0))
-                    .with_source_subrect(512, 288, 32, 32)
-                    .with_dest_pos((coord_x * 32 - camera_x) as _, (coord_y * 32 - camera_y) as _)
-                    .blit();
+            if let Some((coord_x, coord_y)) = self.get_selection_coords(ctx) {
+                if (0..self.map_info.width as i32).contains(&coord_x) &&
+                    (0..self.map_info.height as i32).contains(&coord_y) {
+                    BlitBuilder::create(ctx, &self.sprite_sheet.with_color_key(0))
+                        .with_source_subrect(512, 288, 32, 32)
+                        .with_dest_pos((coord_x * 32 - camera_x) as _, (coord_y * 32 - camera_y) as _)
+                        .blit();
+                }
             }
         }
 

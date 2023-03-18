@@ -177,6 +177,7 @@ impl EditorApp {
                         ui.radio_value(&mut self.current_wall_kind, None, "None");
                         ui.radio_value(&mut self.current_wall_kind, Some(WallKind::Dirt), "Dirt");
                         ui.radio_value(&mut self.current_wall_kind, Some(WallKind::Bricks), "Bricks");
+                        ui.radio_value(&mut self.current_wall_kind, Some(WallKind::Wood), "Wood");
                     }
                     EditorTool::Entities => {
                         ui.radio_value(&mut self.current_entity_kind, None, "None");
@@ -274,7 +275,6 @@ impl EditorApp {
                     }
                     EditorTool::Gatherables => {
                         ui.radio_value(&mut self.current_gatherable_kind, None, "None");
-
                         if ui.add(egui::RadioButton::new(
                             match self.current_gatherable_kind {
                                 Some(GatherableItem::Mushroom(_)) => true,
@@ -289,6 +289,10 @@ impl EditorApp {
                                 }
                             }
                         }
+                        ui.radio_value(
+                            &mut self.current_gatherable_kind, Some(GatherableItem::Wheat),
+                            "Wheat"
+                        );
 
                         match self.current_gatherable_kind {
                             Some(GatherableItem::Mushroom(offset)) => {
@@ -319,6 +323,7 @@ impl EditorApp {
                                         self.current_gatherable_kind = Some(GatherableItem::Mushroom(offset));
                                     });
                             }
+                            Some(GatherableItem::Wheat) => {}
                             None => {}
                         }
                     }
