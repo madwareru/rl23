@@ -6,7 +6,7 @@ use retro_blit::{
     window::{KeyCode, RetroBlitContext, WindowMode}
 };
 use retro_blit::rendering::shapes::fill_rectangle;
-use rl23_map_format::{GatherableItem, MapEntity, TerrainKind, TilingInfo, WallKind, WangEncoding};
+use rl23_map_format::{EntityDrawCommand, GatherableItem, MapEntity, TerrainKind, TilingInfo, WallKind, WangEncoding};
 use crate::editor::tool::EditorTool;
 
 const SCROLL_SPEED: f32 = 512.0;
@@ -28,7 +28,8 @@ struct EditorApp {
     current_tool: EditorTool,
     mouse_pressed: bool,
     camera_x: f32,
-    camera_y: f32
+    camera_y: f32,
+    entity_draw_queue: Vec<Vec<EntityDrawCommand>>
 }
 
 pub fn open_for_edit(file_path: &PathBuf) {
@@ -38,8 +39,23 @@ pub fn open_for_edit(file_path: &PathBuf) {
 
 impl EditorApp {
     pub fn new(file_path: PathBuf) -> Self {
-        let (palette, sprite_sheet) = retro_blit::format_loaders::im_256::Image::load_from(TILES_BYTES).unwrap();
+        let (mut palette, sprite_sheet) = retro_blit::format_loaders::im_256::Image::load_from(TILES_BYTES).unwrap();
+        for pal in palette.iter_mut() {
+            let r = pal[0] as f32;
+            let g = pal[1] as f32;
+            let b = pal[2] as f32;
+
+            let luma = (0.2126 * r + 0.7152 * g + 0.0722 * b).clamp(0.0, 255.0);
+
+            let r = (r * 0.8 + luma * 0.2 + 5.0 * (1.0 - b / 255.0)).clamp(0.0, 255.0) as u8;
+            let g = (g * 0.8 + luma * 0.2 + 2.5 * (1.0 - b / 255.0)).clamp(0.0, 255.0) as u8;
+            let b = (b * 0.8 + luma * 0.2).clamp(0.0, 255.0) as u8;
+
+            *pal = [r, g, b];
+        }
+
         let map_info = rl23_map_format::MapInfo::read_from_path(&file_path);
+        let size = map_info.width * map_info.height;
         Self {
             palette,
             sprite_sheet,
@@ -53,7 +69,8 @@ impl EditorApp {
             mouse_pressed: false,
             camera_x: 0.0,
             camera_y: 0.0,
-            current_edited_entity: None
+            current_edited_entity: None,
+            entity_draw_queue: vec![Vec::with_capacity(4); size]
         }
     }
 
@@ -270,17 +287,29 @@ impl EditorApp {
 
         // Render entities
         {
+            for queue in self.entity_draw_queue.iter_mut() {
+                queue.clear();
+            }
             for (&idx, map_entity) in self.map_info.entity_layer.iter() {
+                let command = map_entity.get_draw_command();
+                self.entity_draw_queue[idx].push(command);
+            }
+
+            for (idx, command_queue) in self.entity_draw_queue.iter_mut().enumerate() {
                 let coord_x = idx % self.map_info.width;
                 let coord_y = idx / self.map_info.height;
-                let [source_x, source_y] = map_entity.get_coords();
+                command_queue.sort_by(|lhs, rhs| lhs.drawing_layer.cmp(&rhs.drawing_layer));
+                for cmd in command_queue.iter() {
+                    let [source_x, source_y] = cmd.coords;
 
-                BlitBuilder::create(ctx, &self.sprite_sheet.with_color_key(0))
-                    .with_source_subrect(source_x, source_y, 32, 32)
-                    .with_dest_pos(
-                        (coord_x as i32 * 32 - camera_x) as _,
-                        (coord_y as i32 * 32 - camera_y) as _
-                    ).blit();
+                    BlitBuilder::create(ctx, &self.sprite_sheet.with_color_key(0))
+                        .with_source_subrect(
+                            source_x as _, source_y as _, cmd.size[0] as _, cmd.size[1] as _
+                        ).with_dest_pos(
+                            (coord_x as i32 * 32 - camera_x) as i16 + cmd.draw_offset[0],
+                            (coord_y as i32 * 32 - camera_y) as i16 + cmd.draw_offset[1]
+                        ).blit();
+                }
             }
         }
 

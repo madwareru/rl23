@@ -295,59 +295,220 @@ pub enum MapEntity {
     Door,
     ClosedDoor(ClosedDoor),
     Unit(Unit),
+    Tree(Tree),
     Loot,
     Logic
 }
 
+#[derive(Copy, Clone)]
+pub struct EntityDrawCommand {
+    pub coords: [u16; 2],
+    pub size: [u16; 2],
+    pub draw_offset: [i16; 2],
+    pub drawing_layer: i8,
+    pub blocks_tiles_above: u8,
+}
+
+impl Default for EntityDrawCommand {
+    fn default() -> Self {
+        Self {
+            coords: [0, 0],
+            size: [32, 32],
+            draw_offset: [0, 0],
+            drawing_layer: 0,
+            blocks_tiles_above: 0
+        }
+    }
+}
+
 impl MapEntity {
-    pub fn get_coords(self) -> [usize; 2] {
+    pub fn get_draw_command(self) -> EntityDrawCommand {
         match self {
-            MapEntity::Door => [64, 480],
-            MapEntity::ClosedDoor(closed_door) => closed_door.get_coords(),
-            MapEntity::Unit(unit) => unit.get_coords(),
-            MapEntity::Loot => [512, 64],
-            MapEntity::Logic => [512, 256]
+            MapEntity::Door => EntityDrawCommand { coords: [64, 480], ..Default::default() } ,
+            MapEntity::ClosedDoor(closed_door) => closed_door.get_draw_command(),
+            MapEntity::Unit(unit) => unit.get_draw_command(),
+            MapEntity::Tree(tree) => tree.get_draw_command(),
+            MapEntity::Loot => EntityDrawCommand {
+                coords: [512, 64],
+                drawing_layer: -2,
+                ..Default::default()
+            } ,
+            MapEntity::Logic => EntityDrawCommand { coords: [512, 256], ..Default::default() }
         }
     }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Deserialize, Serialize)]
 pub enum Unit {
-    Fighter,
-    Archer,
-    WhiteMage,
-    RedMage,
-    OrcSword,
-    OrcAxe,
-    GoblinFighter,
-    GoblinArcher,
+    Leshy,
+    MushroomMan,
+    DarkWolf,
+    Wolf,
+    RogueKnife,
+    RogueAxe,
+    SnakeHuge,
+    Snake,
     Squirrel,
+    Stump,
+    Czort,
+    Imp,
     Spider,
     Bat,
     Ghost,
     Skeleton1,
     Skeleton2,
-    Necromancer
+    Necromancer,
+    DarkVigilante,
+    DarkWarlord,
+    Volkolak,
+    Gorynich,
+    PeasantMale1,
+    PeasantMale2,
+    PeasantMale3,
+    PeasantMale4,
+    PeasantFemale1,
+    PeasantFemale2,
+    PeasantFemale3,
+    PeasantFemale4,
+    PeasantFemale5,
+    PeasantFemale6,
+    PeasantFemale7,
+    PeasantFemale8,
+    PeasantFighter,
+    PeasantArcher,
+    SorcererWhite,
+    SorcererRed
 }
 
 impl Unit {
-    pub fn get_coords(self) -> [usize; 2] {
+    pub fn get_draw_command(self) -> EntityDrawCommand {
         match self {
-            Unit::Fighter => [0, 0],
-            Unit::Archer => [32, 0],
-            Unit::WhiteMage => [32, 32],
-            Unit::RedMage => [0, 32],
-            Unit::OrcSword => [64, 0],
-            Unit::OrcAxe => [96, 0],
-            Unit::GoblinFighter => [64, 32],
-            Unit::GoblinArcher => [96, 32],
-            Unit::Squirrel => [64, 64],
-            Unit::Spider => [0, 128],
-            Unit::Bat => [0, 96],
-            Unit::Ghost => [32, 128],
-            Unit::Skeleton1 => [32, 64],
-            Unit::Skeleton2 => [32, 96],
-            Unit::Necromancer => [0, 64]
+            Unit::Leshy => EntityDrawCommand{ coords: [0, 0], ..Default::default() },
+            Unit::MushroomMan => EntityDrawCommand{ coords: [32, 0], ..Default::default() },
+            Unit::DarkWolf => EntityDrawCommand{ coords: [32, 32], ..Default::default() },
+            Unit::Wolf => EntityDrawCommand{ coords: [0, 32], ..Default::default() },
+            Unit::RogueKnife => EntityDrawCommand{ coords: [64, 0], ..Default::default() },
+            Unit::RogueAxe => EntityDrawCommand{ coords: [96, 0], ..Default::default() },
+            Unit::SnakeHuge => EntityDrawCommand{ coords: [64, 32], ..Default::default() },
+            Unit::Snake => EntityDrawCommand{ coords: [96, 32], ..Default::default() },
+            Unit::Squirrel => EntityDrawCommand{ coords: [64, 64], ..Default::default() },
+            Unit::Spider => EntityDrawCommand{ coords: [0, 128], ..Default::default() },
+            Unit::Bat => EntityDrawCommand{ coords: [0, 96], ..Default::default() },
+            Unit::Ghost => EntityDrawCommand{ coords: [32, 128], ..Default::default() },
+            Unit::Skeleton1 => EntityDrawCommand{ coords: [32, 64], ..Default::default() },
+            Unit::Skeleton2 => EntityDrawCommand{ coords: [32, 96], ..Default::default() },
+            Unit::Necromancer => EntityDrawCommand{ coords: [0, 64], ..Default::default() },
+            Unit::Stump => EntityDrawCommand{ coords: [96, 64], ..Default::default() },
+            Unit::Czort => EntityDrawCommand{ coords: [96, 96], ..Default::default() },
+            Unit::Imp => EntityDrawCommand{ coords: [96, 128], ..Default::default() },
+            Unit::DarkVigilante => EntityDrawCommand{ coords: [0, 160], ..Default::default() },
+            Unit::DarkWarlord => EntityDrawCommand{ coords: [32, 160], ..Default::default() },
+            Unit::PeasantMale1 => EntityDrawCommand{ coords: [0, 288], ..Default::default() },
+            Unit::PeasantMale2 => EntityDrawCommand{ coords: [32, 288], ..Default::default() },
+            Unit::PeasantMale3 => EntityDrawCommand{ coords: [64, 288], ..Default::default() },
+            Unit::PeasantMale4 => EntityDrawCommand{ coords: [96, 288], ..Default::default() },
+            Unit::PeasantFemale1 => EntityDrawCommand{ coords: [0, 320], ..Default::default() },
+            Unit::PeasantFemale2 => EntityDrawCommand{ coords: [32, 320], ..Default::default() },
+            Unit::PeasantFemale3 => EntityDrawCommand{ coords: [64, 320], ..Default::default() },
+            Unit::PeasantFemale4 => EntityDrawCommand{ coords: [96, 320], ..Default::default() },
+            Unit::PeasantFemale5 => EntityDrawCommand{ coords: [0, 352], ..Default::default() },
+            Unit::PeasantFemale6 => EntityDrawCommand{ coords: [32, 352], ..Default::default() },
+            Unit::PeasantFemale7 => EntityDrawCommand{ coords: [64, 352], ..Default::default() },
+            Unit::PeasantFemale8 => EntityDrawCommand{ coords: [96, 352], ..Default::default() },
+            Unit::PeasantFighter => EntityDrawCommand{ coords: [0, 384], ..Default::default() },
+            Unit::PeasantArcher => EntityDrawCommand{ coords: [32, 384], ..Default::default() },
+            Unit::SorcererRed => EntityDrawCommand{ coords: [64, 384], ..Default::default() },
+            Unit::SorcererWhite => EntityDrawCommand{ coords: [96, 384], ..Default::default() },
+            Unit::Volkolak => EntityDrawCommand{
+                coords: [64, 96],
+                size: [32, 64],
+                draw_offset: [0, -32],
+                drawing_layer: 0,
+                blocks_tiles_above: 1
+            },
+            Unit::Gorynich => EntityDrawCommand{
+                coords: [64, 160],
+                size: [64, 64],
+                draw_offset: [-16, -30],
+                drawing_layer: 0,
+                blocks_tiles_above: 1
+            },
+        }
+    }
+}
+
+
+#[derive(Copy, Clone, Debug, PartialEq, Deserialize, Serialize)]
+pub enum Tree {
+    Pine1,
+    Pine2,
+    Oak,
+    Birch,
+    Pine1Cursed,
+    Pine2Cursed,
+    OakCursed,
+    BirchCursed
+}
+
+impl Tree {
+    pub fn get_draw_command(self) -> EntityDrawCommand {
+        match self {
+            Tree::Pine1 => EntityDrawCommand {
+                coords: [736, 0],
+                size: [96, 96],
+                draw_offset: [-32, -64],
+                drawing_layer: 0,
+                blocks_tiles_above: 2
+            },
+            Tree::Pine2 => EntityDrawCommand {
+                coords: [832, 24],
+                size: [32, 62],
+                draw_offset: [0, -40],
+                drawing_layer: 0,
+                blocks_tiles_above: 1
+            },
+            Tree::Oak => EntityDrawCommand {
+                coords: [864, 0],
+                size: [96, 96],
+                draw_offset: [-32, -64],
+                drawing_layer: 0,
+                blocks_tiles_above: 2
+            },
+            Tree::Birch => EntityDrawCommand {
+                coords: [986, 0],
+                size: [38, 84],
+                draw_offset: [-6, -64],
+                drawing_layer: 0,
+                blocks_tiles_above: 2
+            },
+            Tree::Pine1Cursed => EntityDrawCommand {
+                coords: [736, 96],
+                size: [96, 96],
+                draw_offset: [-32, -64],
+                drawing_layer: 0,
+                blocks_tiles_above: 2
+            },
+            Tree::Pine2Cursed => EntityDrawCommand {
+                coords: [832, 120],
+                size: [32, 62],
+                draw_offset: [0, -40],
+                drawing_layer: 0,
+                blocks_tiles_above: 1
+            },
+            Tree::OakCursed => EntityDrawCommand {
+                coords: [864, 96],
+                size: [96, 96],
+                draw_offset: [-32, -64],
+                drawing_layer: 0,
+                blocks_tiles_above: 2
+            },
+            Tree::BirchCursed => EntityDrawCommand {
+                coords: [986, 96],
+                size: [38, 84],
+                draw_offset: [-6, -64],
+                drawing_layer: 0,
+                blocks_tiles_above: 2
+            },
         }
     }
 }
@@ -361,12 +522,12 @@ pub enum ClosedDoor {
 }
 
 impl ClosedDoor {
-    pub fn get_coords(self) -> [usize; 2] {
+    pub fn get_draw_command(self) -> EntityDrawCommand {
         match self {
-            ClosedDoor::Gray => [0, 416],
-            ClosedDoor::Green => [0, 448],
-            ClosedDoor::Brown => [64, 448],
-            ClosedDoor::Blue => [0, 480]
+            ClosedDoor::Gray => EntityDrawCommand { coords: [0, 416], ..Default::default() },
+            ClosedDoor::Green => EntityDrawCommand { coords: [0, 448], ..Default::default() },
+            ClosedDoor::Brown => EntityDrawCommand { coords: [64, 448], ..Default::default() },
+            ClosedDoor::Blue => EntityDrawCommand { coords: [0, 480], ..Default::default() }
         }
     }
 }

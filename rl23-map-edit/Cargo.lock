@@ -1341,8 +1341,8 @@ checksum = "456c603be3e8d448b072f410900c09faf164fbce2d480456f50eea6e25f9c848"
 
 [[package]]
 name = "retro-blit"
-version = "0.1.5"
-source = "git+https://github.com/madwareru/retro-blit.git#0341d8853880e5071890e685554146f7278a20a2"
+version = "0.1.8"
+source = "git+https://github.com/madwareru/retro-blit.git#eaf1fecb1584bdd1c6ab62376bf98ec4aef3ed51"
 dependencies = [
  "bin-serialization-rs",
  "bumpalo",

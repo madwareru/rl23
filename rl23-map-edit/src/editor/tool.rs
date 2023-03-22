@@ -1,7 +1,7 @@
 use egui::{Align2, Context, Ui};
 use rand::Rng;
 use retro_blit::window::RetroBlitContext;
-use rl23_map_format::{ClosedDoor, EntityComponentData, GatherableItem, MapEntity, TerrainKind, Unit, WallKind};
+use rl23_map_format::{ClosedDoor, EntityComponentData, GatherableItem, MapEntity, TerrainKind, Tree, Unit, WallKind};
 use crate::editor::EditorApp;
 
 #[derive(Copy, Clone, PartialEq)]
@@ -208,7 +208,22 @@ impl EditorApp {
                             match self.current_entity_kind {
                                 Some(MapEntity::Unit(_)) => {},
                                 _ => {
-                                    self.current_entity_kind = Some(MapEntity::Unit(Unit::Fighter))
+                                    self.current_entity_kind = Some(MapEntity::Unit(Unit::Leshy))
+                                }
+                            }
+                        }
+
+                        if ui.add(egui::RadioButton::new(
+                            match self.current_entity_kind {
+                                Some(MapEntity::Tree(_)) => true,
+                                _ => false
+                            },
+                            "Tree"
+                        )).clicked() {
+                            match self.current_entity_kind {
+                                Some(MapEntity::Tree(_)) => {},
+                                _ => {
+                                    self.current_entity_kind = Some(MapEntity::Tree(Tree::Pine1))
                                 }
                             }
                         }
@@ -219,37 +234,90 @@ impl EditorApp {
                         match self.current_entity_kind {
                             Some(MapEntity::Unit(unit)) => {
                                 egui::Window::new("unit")
-                                    .default_width(130.0)
+                                    .default_width(170.0)
                                     .resizable(false)
                                     .anchor(Align2::CENTER_BOTTOM, [0.0, 0.0])
                                     .show(&egui_ctx, |ui: &mut Ui| {
                                         let mut unit = unit;
                                         ui.vertical(|ui: &mut Ui| {
                                             ui.horizontal(|ui: &mut Ui| {
-                                                ui.radio_value(&mut unit, Unit::Fighter, "Fighter");
-                                                ui.radio_value(&mut unit, Unit::Archer, "Archer");
-                                                ui.radio_value(&mut unit, Unit::WhiteMage, "WhiteMage");
-                                                ui.radio_value(&mut unit, Unit::RedMage, "RedMage");
+                                                ui.radio_value(&mut unit, Unit::Leshy, "Leshy");
+                                                ui.radio_value(&mut unit, Unit::MushroomMan, "MushroomMan");
+                                                ui.radio_value(&mut unit, Unit::Wolf, "Wolf");
+                                                ui.radio_value(&mut unit, Unit::DarkWolf, "DarkWolf");
+                                                ui.radio_value(&mut unit, Unit::Snake, "Snake");
+                                                ui.radio_value(&mut unit, Unit::SnakeHuge, "SnakeHuge");
                                             });
                                             ui.horizontal(|ui: &mut Ui| {
-                                                ui.radio_value(&mut unit, Unit::OrcSword, "OrcSword");
-                                                ui.radio_value(&mut unit, Unit::OrcAxe, "OrcAxe");
-                                                ui.radio_value(&mut unit, Unit::GoblinFighter, "GoblinFighter");
-                                                ui.radio_value(&mut unit, Unit::GoblinArcher, "GoblinArcher");
+                                                ui.radio_value(&mut unit, Unit::RogueKnife, "RogueKnife");
+                                                ui.radio_value(&mut unit, Unit::RogueAxe, "RogueAxe");
+                                                ui.radio_value(&mut unit, Unit::Spider, "Spider");
+                                                ui.radio_value(&mut unit, Unit::Ghost, "Ghost");
+                                                ui.radio_value(&mut unit, Unit::Squirrel, "Squirrel");
+                                                ui.radio_value(&mut unit, Unit::Stump, "Stump");
                                             });
                                             ui.horizontal(|ui: &mut Ui| {
                                                 ui.radio_value(&mut unit, Unit::Necromancer, "Necromancer");
                                                 ui.radio_value(&mut unit, Unit::Skeleton1, "Skeleton1");
                                                 ui.radio_value(&mut unit, Unit::Skeleton2, "Skeleton2");
-                                                ui.radio_value(&mut unit, Unit::Spider, "Spider");
+                                                ui.radio_value(&mut unit, Unit::Bat, "Bat");
+                                                ui.radio_value(&mut unit, Unit::DarkVigilante, "DarkVigilante");
+                                                ui.radio_value(&mut unit, Unit::DarkWarlord, "DarkWarlord");
                                             });
                                             ui.horizontal(|ui: &mut Ui| {
-                                                ui.radio_value(&mut unit, Unit::Bat, "Bat");
-                                                ui.radio_value(&mut unit, Unit::Ghost, "Ghost");
-                                                ui.radio_value(&mut unit, Unit::Squirrel, "Squirrel");
+                                                ui.radio_value(&mut unit, Unit::Czort, "Czort");
+                                                ui.radio_value(&mut unit, Unit::Imp, "Imp");
+                                                ui.radio_value(&mut unit, Unit::Volkolak, "Volkolak");
+                                                ui.radio_value(&mut unit, Unit::Gorynich, "Gorynich");
+                                            });
+                                            ui.horizontal(|ui: &mut Ui| {
+                                                ui.radio_value(&mut unit, Unit::PeasantMale1, "PeasantMale1");
+                                                ui.radio_value(&mut unit, Unit::PeasantMale2, "PeasantMale2");
+                                                ui.radio_value(&mut unit, Unit::PeasantMale3, "PeasantMale3");
+                                                ui.radio_value(&mut unit, Unit::PeasantMale4, "PeasantMale4");
+                                                ui.radio_value(&mut unit, Unit::PeasantFemale1, "PeasantFemale1");
+                                                ui.radio_value(&mut unit, Unit::PeasantFemale2, "PeasantFemale2");
+                                            });
+                                            ui.horizontal(|ui: &mut Ui| {
+                                                ui.radio_value(&mut unit, Unit::PeasantFemale3, "PeasantFemale3");
+                                                ui.radio_value(&mut unit, Unit::PeasantFemale4, "PeasantFemale4");
+                                                ui.radio_value(&mut unit, Unit::PeasantFemale5, "PeasantFemale5");
+                                                ui.radio_value(&mut unit, Unit::PeasantFemale6, "PeasantFemale6");
+                                                ui.radio_value(&mut unit, Unit::PeasantFemale7, "PeasantFemale7");
+                                                ui.radio_value(&mut unit, Unit::PeasantFemale8, "PeasantFemale8");
+                                            });
+                                            ui.horizontal(|ui: &mut Ui| {
+                                                ui.radio_value(&mut unit, Unit::PeasantFighter, "PeasantFighter");
+                                                ui.radio_value(&mut unit, Unit::PeasantArcher, "PeasantArcher");
+                                                ui.radio_value(&mut unit, Unit::SorcererRed, "SorcererRed");
+                                                ui.radio_value(&mut unit, Unit::SorcererWhite, "SorcererWhite");
                                             });
                                         });
                                         self.current_entity_kind = Some(MapEntity::Unit(unit));
+                                    });
+                            },
+                            Some(MapEntity::Tree(tree)) => {
+                                egui::Window::new("tree")
+                                    .default_width(130.0)
+                                    .resizable(false)
+                                    .anchor(Align2::CENTER_BOTTOM, [0.0, 0.0])
+                                    .show(&egui_ctx, |ui: &mut Ui| {
+                                        let mut tree = tree;
+                                        ui.vertical(|ui: &mut Ui| {
+                                            ui.horizontal(|ui: &mut Ui| {
+                                                ui.radio_value(&mut tree, Tree::Pine1, "Pine1");
+                                                ui.radio_value(&mut tree, Tree::Pine2, "Pine2");
+                                                ui.radio_value(&mut tree, Tree::Oak, "Oak");
+                                                ui.radio_value(&mut tree, Tree::Birch, "Birch");
+                                            });
+                                            ui.horizontal(|ui: &mut Ui| {
+                                                ui.radio_value(&mut tree, Tree::Pine1Cursed, "Pine1Cursed");
+                                                ui.radio_value(&mut tree, Tree::Pine2Cursed, "Pine2Cursed");
+                                                ui.radio_value(&mut tree, Tree::OakCursed, "OakCursed");
+                                                ui.radio_value(&mut tree, Tree::BirchCursed, "BirchCursed");
+                                            });
+                                        });
+                                        self.current_entity_kind = Some(MapEntity::Tree(tree));
                                     });
                             },
                             Some(MapEntity::ClosedDoor(closed_door)) => {

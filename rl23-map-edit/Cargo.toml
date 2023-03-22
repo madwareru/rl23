@@ -7,6 +7,6 @@ edition = "2021"
 
 [dependencies]
 rl23-map-format = { path = "../rl23-map-format" }
-retro-blit = { git = "https://github.com/madwareru/retro-blit.git", version = "0.1.5" }
+retro-blit = { git = "https://github.com/madwareru/retro-blit.git", version = "0.1.8" }
 egui = "0.19"
 rand = "0.8"
