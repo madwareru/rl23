@@ -314,7 +314,7 @@ impl Default for EntityDrawCommand {
         Self {
             coords: [0, 0],
             size: [32, 32],
-            draw_offset: [0, 0],
+            draw_offset: [-2, -7],
             drawing_layer: 0,
             blocks_tiles_above: 0
         }
@@ -388,7 +388,11 @@ pub enum Unit {
 impl Unit {
     pub fn get_draw_command(self) -> EntityDrawCommand {
         match self {
-            Unit::Leshy => EntityDrawCommand{ coords: [0, 0], ..Default::default() },
+            Unit::Leshy => EntityDrawCommand{
+                coords: [0, 0],
+                draw_offset: [0, -9],
+                ..Default::default()
+            },
             Unit::MushroomMan => EntityDrawCommand{ coords: [32, 0], ..Default::default() },
             Unit::DarkWolf => EntityDrawCommand{ coords: [32, 32], ..Default::default() },
             Unit::Wolf => EntityDrawCommand{ coords: [0, 32], ..Default::default() },
@@ -427,20 +431,24 @@ impl Unit {
             Unit::Volkolak => EntityDrawCommand{
                 coords: [64, 96],
                 size: [32, 64],
-                draw_offset: [0, -32],
+                draw_offset: [0, -39],
                 drawing_layer: 0,
                 blocks_tiles_above: 1
             },
             Unit::Gorynich => EntityDrawCommand{
                 coords: [64, 160],
                 size: [64, 64],
-                draw_offset: [-16, -30],
+                draw_offset: [-20, -39],
                 drawing_layer: 0,
                 blocks_tiles_above: 1
             },
             Unit::Rusalka => EntityDrawCommand{ coords: [0, 192], ..Default::default() },
             Unit::Vodyanoy => EntityDrawCommand{ coords: [32, 192], ..Default::default() },
-            Unit::Liho => EntityDrawCommand{ coords: [0, 224], ..Default::default() },
+            Unit::Liho => EntityDrawCommand{
+                coords: [0, 224],
+                draw_offset: [-2, -12],
+                ..Default::default()
+            },
             Unit::Poludenniza => EntityDrawCommand{ coords: [32, 224], ..Default::default() },
             Unit::Polevik => EntityDrawCommand{ coords: [64, 224], ..Default::default() },
         }
@@ -466,14 +474,14 @@ impl Tree {
             Tree::Pine1 => EntityDrawCommand {
                 coords: [736, 0],
                 size: [96, 96],
-                draw_offset: [-32, -64],
+                draw_offset: [-34, -64],
                 drawing_layer: 0,
                 blocks_tiles_above: 2
             },
             Tree::Pine2 => EntityDrawCommand {
                 coords: [832, 24],
                 size: [32, 62],
-                draw_offset: [0, -40],
+                draw_offset: [-2, -40],
                 drawing_layer: 0,
                 blocks_tiles_above: 1
             },
@@ -487,21 +495,21 @@ impl Tree {
             Tree::Birch => EntityDrawCommand {
                 coords: [986, 0],
                 size: [38, 84],
-                draw_offset: [-6, -64],
+                draw_offset: [-8, -64],
                 drawing_layer: 0,
                 blocks_tiles_above: 2
             },
             Tree::Pine1Cursed => EntityDrawCommand {
                 coords: [736, 96],
                 size: [96, 96],
-                draw_offset: [-32, -64],
+                draw_offset: [-34, -64],
                 drawing_layer: 0,
                 blocks_tiles_above: 2
             },
             Tree::Pine2Cursed => EntityDrawCommand {
                 coords: [832, 120],
                 size: [32, 62],
-                draw_offset: [0, -40],
+                draw_offset: [-2, -40],
                 drawing_layer: 0,
                 blocks_tiles_above: 1
             },
@@ -515,7 +523,7 @@ impl Tree {
             Tree::BirchCursed => EntityDrawCommand {
                 coords: [986, 96],
                 size: [38, 84],
-                draw_offset: [-6, -64],
+                draw_offset: [-8, -64],
                 drawing_layer: 0,
                 blocks_tiles_above: 2
             },
