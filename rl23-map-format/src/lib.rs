@@ -362,6 +362,11 @@ pub enum Unit {
     DarkWarlord,
     Volkolak,
     Gorynich,
+    Rusalka,
+    Vodyanoy,
+    Liho,
+    Polevik,
+    Poludenniza,
     PeasantMale1,
     PeasantMale2,
     PeasantMale3,
@@ -433,6 +438,11 @@ impl Unit {
                 drawing_layer: 0,
                 blocks_tiles_above: 1
             },
+            Unit::Rusalka => EntityDrawCommand{ coords: [0, 192], ..Default::default() },
+            Unit::Vodyanoy => EntityDrawCommand{ coords: [32, 192], ..Default::default() },
+            Unit::Liho => EntityDrawCommand{ coords: [0, 224], ..Default::default() },
+            Unit::Poludenniza => EntityDrawCommand{ coords: [32, 224], ..Default::default() },
+            Unit::Polevik => EntityDrawCommand{ coords: [64, 224], ..Default::default() },
         }
     }
 }

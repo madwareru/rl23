@@ -269,6 +269,11 @@ impl EditorApp {
                                                 ui.radio_value(&mut unit, Unit::Imp, "Imp");
                                                 ui.radio_value(&mut unit, Unit::Volkolak, "Volkolak");
                                                 ui.radio_value(&mut unit, Unit::Gorynich, "Gorynich");
+                                                ui.radio_value(&mut unit, Unit::Rusalka, "Rusalka");
+                                                ui.radio_value(&mut unit, Unit::Vodyanoy, "Vodyanoy");
+                                                ui.radio_value(&mut unit, Unit::Liho, "Liho");
+                                                ui.radio_value(&mut unit, Unit::Polevik, "Polevik");
+                                                ui.radio_value(&mut unit, Unit::Poludenniza, "Poludenniza");
                                             });
                                             ui.horizontal(|ui: &mut Ui| {
                                                 ui.radio_value(&mut unit, Unit::PeasantMale1, "PeasantMale1");
