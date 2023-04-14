@@ -1,7 +1,7 @@
-use egui::{Align2, Context, Ui};
+use egui::{Align2, CollapsingHeader, Context, Ui};
 use rand::Rng;
 use retro_blit::window::RetroBlitContext;
-use rl23_map_format::{ClosedDoor, EntityComponentData, GatherableItem, MapEntity, TerrainKind, Tree, Unit, WallKind};
+use rl23_map_format::{ClosedDoor, Decor, EntityComponentData, EntityComponentDataList, GatherableItem, MapEntity, TerrainKind, Tree, Unit, WallKind};
 use crate::editor::EditorApp;
 
 #[derive(Copy, Clone, PartialEq)]
@@ -51,7 +51,11 @@ impl EditorApp {
                             None => {}
                             Some(map_entity) => {
                                 self.map_info.entity_layer.insert(idx, map_entity);
-                                self.map_info.entity_data_layer.insert(idx, vec![]);
+                                let id = self.map_info.id_generator.generate();
+                                self.map_info.entity_data_layer.insert(
+                                    idx,
+                                    EntityComponentDataList::create(id)
+                                );
                             }
                         }
                     }
@@ -70,7 +74,11 @@ impl EditorApp {
                             Some(map_entity) => {
                                 if old_entity != map_entity {
                                     self.map_info.entity_layer.insert(idx, map_entity);
-                                    self.map_info.entity_data_layer.insert(idx, vec![]);
+                                    let id = self.map_info.id_generator.generate();
+                                    self.map_info.entity_data_layer.insert(
+                                        idx,
+                                        EntityComponentDataList::create(id)
+                                    );
                                 }
                             }
                         }
@@ -200,6 +208,21 @@ impl EditorApp {
 
                         if ui.add(egui::RadioButton::new(
                             match self.current_entity_kind {
+                                Some(MapEntity::Decor(_)) => true,
+                                _ => false
+                            },
+                            "Decor"
+                        )).clicked() {
+                            match self.current_entity_kind {
+                                Some(MapEntity::Decor(_)) => {},
+                                _ => {
+                                    self.current_entity_kind = Some(MapEntity::Decor(Decor::Dresser1))
+                                }
+                            }
+                        }
+
+                        if ui.add(egui::RadioButton::new(
+                            match self.current_entity_kind {
                                 Some(MapEntity::Unit(_)) => true,
                                 _ => false
                             },
@@ -299,6 +322,48 @@ impl EditorApp {
                                             });
                                         });
                                         self.current_entity_kind = Some(MapEntity::Unit(unit));
+                                    });
+                            },
+                            Some(MapEntity::Decor(decor)) => {
+                                egui::Window::new("decor")
+                                    .default_width(130.0)
+                                    .resizable(false)
+                                    .anchor(Align2::CENTER_BOTTOM, [0.0, 0.0])
+                                    .show(&egui_ctx, |ui: &mut Ui| {
+                                        let mut decor = decor;
+                                        ui.vertical(|ui: &mut Ui| {
+                                            ui.horizontal(|ui: &mut Ui| {
+                                                ui.radio_value(&mut decor, Decor::Bed1GreenLeft, "Bed1GreenLeft");
+                                                ui.radio_value(&mut decor, Decor::Bed1GreenRight, "Bed1GreenRight");
+                                                ui.radio_value(&mut decor, Decor::Bed2GreenLeft, "Bed2GreenLeft");
+                                                ui.radio_value(&mut decor, Decor::Bed2GreenRight, "Bed2GreenRight");
+                                            });
+                                            ui.horizontal(|ui: &mut Ui| {
+                                                ui.radio_value(&mut decor, Decor::Bed1BlueLeft, "Bed1BlueLeft");
+                                                ui.radio_value(&mut decor, Decor::Bed1BlueRight, "Bed1BlueRight");
+                                                ui.radio_value(&mut decor, Decor::Bed2BlueLeft, "Bed2BlueLeft");
+                                                ui.radio_value(&mut decor, Decor::Bed2BlueRight, "Bed2BlueRight");
+                                            });
+                                            ui.horizontal(|ui: &mut Ui| {
+                                                ui.radio_value(&mut decor, Decor::Bed1WhiteLeft, "Bed1WhiteLeft");
+                                                ui.radio_value(&mut decor, Decor::Bed1WhiteRight, "Bed1WhiteRight");
+                                                ui.radio_value(&mut decor, Decor::Bed2WhiteLeft, "Bed2WhiteLeft");
+                                                ui.radio_value(&mut decor, Decor::Bed2WhiteRight, "Bed2WhiteRight");
+                                            });
+                                            ui.horizontal(|ui: &mut Ui| {
+                                                ui.radio_value(&mut decor, Decor::TableGreen, "TableGreen");
+                                                ui.radio_value(&mut decor, Decor::TableBlue, "TableBlue");
+                                                ui.radio_value(&mut decor, Decor::TableBlack, "TableBlack");
+                                                ui.radio_value(&mut decor, Decor::OvenLeft, "OvenLeft");
+                                                ui.radio_value(&mut decor, Decor::OvenRight, "OvenRight");
+                                            });
+                                            ui.horizontal(|ui: &mut Ui| {
+                                                ui.radio_value(&mut decor, Decor::Closet, "Closet");
+                                                ui.radio_value(&mut decor, Decor::Dresser1, "Dresser1");
+                                                ui.radio_value(&mut decor, Decor::Dresser2, "Dresser2");
+                                            });
+                                        });
+                                        self.current_entity_kind = Some(MapEntity::Decor(decor));
                                     });
                             },
                             Some(MapEntity::Tree(tree)) => {
@@ -405,21 +470,33 @@ impl EditorApp {
                             egui::ScrollArea::vertical().auto_shrink([false, true]).show(ui, |ui: &mut Ui| {
                                 let map_entity = self.map_info.entity_layer[&idx];
                                 if !self.map_info.entity_data_layer.contains_key(&idx) {
-                                    self.map_info.entity_data_layer.insert(idx, vec![]);
+                                    let id = self.map_info.id_generator.generate();
+                                    self.map_info.entity_data_layer.insert(
+                                        idx,
+                                        EntityComponentDataList::create(id)
+                                    );
                                 }
                                 match self.map_info.entity_data_layer.get_mut(&idx) {
                                     Some(entries) => {
-                                        let mut offset = 0;
-                                        while offset < entries.len() {
-                                            if entries[offset].draw_egui(ui) {
-                                                offset += 1;
-                                            } else {
-                                                entries.remove(offset);
-                                            }
-                                        }
-                                        if let Some(new_entry) = EntityComponentData::draw_context_menu(map_entity, ui) {
-                                            entries.push(new_entry);
-                                        }
+                                        CollapsingHeader::new("components")
+                                            .id_source(entries.id())
+                                            .show(ui, |ui: &mut Ui| {
+                                                let mut offset = 0;
+                                                while offset < entries.len() {
+                                                    if entries[offset].draw_egui(&mut self.map_info.id_generator, ui) {
+                                                        offset += 1;
+                                                    } else {
+                                                        entries.remove(offset);
+                                                    }
+                                                }
+                                                if let Some(new_entry) = EntityComponentData::draw_context_menu(
+                                                    map_entity,
+                                                    &mut self.map_info.id_generator,
+                                                    ui
+                                                ) {
+                                                    entries.push(new_entry);
+                                                }
+                                            });
                                     },
                                     None => unreachable!()
                                 }
