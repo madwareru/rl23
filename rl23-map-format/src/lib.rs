@@ -877,7 +877,6 @@ pub struct SpawnRandomUnit {
 impl EntityComponentDataImpl for SpawnRandomUnit {
     fn draw_egui(&mut self, _id_generator: &mut IdGenerator, ui: &mut Ui) {
             ui.label(padded_str("Spawn Random Unit"));
-            ui
             ui.add(egui::DragValue::new(&mut self.min_level).prefix("min_level: ").speed(1.0));
             ui.add(egui::DragValue::new(&mut self.max_level).prefix("max_level: ").speed(1.0));
     }
